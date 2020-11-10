@@ -6,7 +6,7 @@ from torch.nn.modules import loss
 from torch._C import device
 import torch.nn as nn
 import torchvision.transforms as T
-from model.model import DNN
+from model.model import *
 
 act_dict={
     'relu':nn.ReLU,
@@ -17,6 +17,7 @@ act_dict={
 }
 model_dict={
     'dnn':DNN,
+    'lenet':LeNet
 }
 loss_dict={
     'crossentropy':nn.CrossEntropyLoss,
@@ -29,13 +30,14 @@ def get_args():
     parser.add_argument('--lr', type=float, default=0.001)
     parser.add_argument('--batch_size', type=int, default=16)
     parser.add_argument('--epoch', type=int, default=20)
-    parser.add_argument('--drop_rate', type=float, default=0.97)
+    parser.add_argument('--drop_rate', type=float, default=1)
     parser.add_argument('--optimizer',type=str,default='adam')
     parser.add_argument('--model',type=str,default='dnn')
     parser.add_argument('--act',type=str,default='relu')
     parser.add_argument('--loss_func',type=str,default='crossentropy')
     parser.add_argument('--data_path',type=str,default='./datasets')
     parser.add_argument('--device',type=str,default='cuda')
+    parser.add_argument('--checkpoints_path',type=str,default='./checkpoints')
     return parser.parse_args()
 
 def train(args):
@@ -67,7 +69,7 @@ def train(args):
             outputs=net(images)
 
             loss=loss_func(outputs,labels)
-            optimizer.zero_grads()
+            optimizer.zero_grad()
             loss.backward()
             optimizer.step()
 
@@ -78,7 +80,7 @@ def train(args):
         if(epoch%2==1):
             eval_acc=eval(args,net)
             if eval_acc>current_acc:
-                torch.save(net.state_dict(),'best_%s_model.pth' %args.model)
+                torch.save(net.state_dict(),'%s/best_%s_model.pth' %(args.checkpoints_path,args.model))
 
 
 def eval(args,net):
@@ -89,6 +91,7 @@ def eval(args,net):
     T.ToTensor(),
     T.Normalize((0.3081),(0.1307))
     ])
+    device=torch.device(args.device)
     test_data=torchvision.datasets.MNIST(root=args.data_path,transform=transformer,train=False)
     test_loader=torch.utils.data.DataLoader(test_data,batch_size=args.batch_size,shuffle=True,drop_last=False)
     total_acc=0
@@ -97,6 +100,7 @@ def eval(args,net):
         outputs=net(images)
         acc=torch.sum(outputs.argmax(-1)==labels).item()
         total_acc+=acc
+    print("eval acc=%.2f%%" %(total_acc/len(test_data)*100))
     return total_acc/len(test_data)    
 
 if __name__ == '__main__':
