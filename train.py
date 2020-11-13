@@ -1,11 +1,9 @@
-import argparse
-from os import name
-
 import torch,torchvision
 from torch.nn.modules import loss
-from torch._C import device
 import torch.nn as nn
 import torchvision.transforms as T
+import argparse
+import tensorboardX
 from model.model import *
 
 act_dict={
@@ -16,8 +14,9 @@ act_dict={
     'leakyrelu':nn.LeakyReLU,
 }
 model_dict={
-    'dnn':DNN,
-    'lenet':LeNet
+    'dnn':(DNN,{}),
+    'lenet':(LeNet,{}),
+    'vggnet':(VggNet,{"name":'vgg16'}),
 }
 loss_dict={
     'crossentropy':nn.CrossEntropyLoss,
@@ -48,9 +47,10 @@ def train(args):
     train_data=torchvision.datasets.MNIST(root=args.data_path,transform=transformer,download=True,train=True)
     train_loader=torch.utils.data.DataLoader(train_data,batch_size=args.batch_size,shuffle=True,drop_last=True)
 
-    act=act_dict[args.act]
+    model_arg=model_dict[args.model][1]
+    model_arg["act"]=(act_dict[args.act])
     device=torch.device(args.device)
-    net=model_dict[args.model](act=act).to(device)
+    net=model_dict[args.model][0](**model_arg).to(device)
 
     if args.optimizer=='adam':
         optimizer=torch.optim.Adam(net.parameters(),lr=args.lr,betas=(0.9,0.99))
@@ -60,14 +60,15 @@ def train(args):
         optimizer=None
     loss_func=loss_dict[args.loss_func]()
     
+    writer=tensorboardX.SummaryWriter()
+
     current_acc=0
     for epoch in range(args.epoch):
         total_loss=0.
         total_acc=0.
-        for images,labels in train_loader:
+        for i,(images,labels) in enumerate(train_loader):
             images,labels=images.to(device),labels.to(device)
             outputs=net(images)
-
             loss=loss_func(outputs,labels)
             optimizer.zero_grad()
             loss.backward()
@@ -76,9 +77,12 @@ def train(args):
             total_loss+=loss.item()
             acc=torch.sum(outputs.argmax(-1)==labels).item()
             total_acc+=acc/args.batch_size
+
+            writer.add_scalar('data/loss',loss,i+epoch*len(train_loader))
         print("epoch%3d: loss=%.4f ,acc:%.2f%% " %(epoch,total_loss/len(train_loader),total_acc*100/len(train_loader)))
-        if(epoch%2==1):
+        if(epoch%1==0):
             eval_acc=eval(args,net)
+            writer.add_scalar('data/acc',eval_acc,epoch)
             if eval_acc>current_acc:
                 torch.save(net.state_dict(),'%s/best_%s_model.pth' %(args.checkpoints_path,args.model))
 
