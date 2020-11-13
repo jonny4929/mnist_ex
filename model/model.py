@@ -78,12 +78,13 @@ class VggNet(nn.Module):
         super(VggNet,self).__init__()
         self.padding=nn.ZeroPad2d(2)
         arg=vgg_arg[name]
-        in_channel=1
+        in_channels=1
         for i,num in enumerate(arg):
             layer_list=[]
+            out_channels=min(512,2**(i+6))
             for _ in range(num):
-                layer_list.append(basic_conv(in_channel,2**(i+6),3,padding=1))
-                in_channel=2**3
+                layer_list.append(basic_conv(in_channels,out_channels,3,padding=1))
+                in_channels=out_channels
             layer_list.append(nn.MaxPool2d(2,2))
             setattr(self,"layer%d" %(i+1),nn.Sequential(*layer_list))
         self.features=nn.Sequential(*[getattr(self,"layer%d"%(i+1)) for i in range(5)])
@@ -100,5 +101,5 @@ class VggNet(nn.Module):
         docstring
         """
         inputs=self.padding(inputs)
-        feature=self.features(inputs)
+        feature=self.features(inputs).view(-1,512)
         return self.classifier(feature)
