@@ -28,17 +28,16 @@ def get_args():
     get arguments for this scripts
     """
     parser = argparse.ArgumentParser()
-    parser.add_argument('--lr', type=float, default=0.001)
-    parser.add_argument('--batch_size', type=int, default=16)
-    parser.add_argument('--epoch', type=int, default=20)
-    parser.add_argument('--drop_rate', type=float, default=1)
-    parser.add_argument('--optimizer',type=str,default='adam')
-    parser.add_argument('--model',type=str,default='dnn')
-    parser.add_argument('--act',type=str,default='relu')
-    parser.add_argument('--loss_func',type=str,default='crossentropy')
-    parser.add_argument('--data_path',type=str,default='./datasets')
-    parser.add_argument('--device',type=str,default='cuda')
-    parser.add_argument('--checkpoints_path',type=str,default='./checkpoints')
+    parser.add_argument('--lr', type=float, default=0.001,help='set learning rate')
+    parser.add_argument('--batch_size', type=int, default=16,help='set batch size')
+    parser.add_argument('--epoch', type=int, default=20,help='set the epoches')
+    parser.add_argument('--optimizer',type=str,default='adam',help='set the optimizer to use')
+    parser.add_argument('--model',type=str,default='dnn',help='determine which model to use')
+    parser.add_argument('--act',type=str,default='relu',help='determine which activation function to use')
+    parser.add_argument('--loss_func',type=str,default='crossentropy',help='determine which loss function to use')
+    parser.add_argument('--data_path',type=str,default='./datasets'，help="the path to download the mnist dataset or its location if you have download it, make sure it's valid")
+    parser.add_argument('--device',type=str,default='cuda',help='determine the device to use, set \n--device cpu\nif you do not want to use cuda')
+    parser.add_argument('--checkpoints_path',type=str,default="./checkpoints',help='the path to save the model you have trained, make sure it's valid")
     return parser.parse_args()
 
 def train(args):
