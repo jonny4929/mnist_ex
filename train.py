@@ -17,6 +17,8 @@ model_dict={
     'dnn':(DNN,{}),
     'lenet':(LeNet,{}),
     'vggnet':(VggNet,{"name":'vgg16'}),
+    'resnet':(ResNet,{}),
+    'torchresnet':(torchresnet,{})
 }
 loss_dict={
     'crossentropy':nn.CrossEntropyLoss,
@@ -45,7 +47,7 @@ def train(args):
     T.Normalize((0.3081),(0.1307))
     ])
     train_data=torchvision.datasets.MNIST(root=args.data_path,transform=transformer,download=True,train=True)
-    train_loader=torch.utils.data.DataLoader(train_data,batch_size=args.batch_size,shuffle=True,drop_last=True)
+    train_loader=torch.utils.data.DataLoader(train_data,batch_size=args.batch_size,shuffle=True,drop_last=True,num_workers=4)
 
     model_arg=model_dict[args.model][1]
     model_arg["act"]=(act_dict[args.act])
